@@ -23,6 +23,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = Path(script_dir).parent
 sys.path.insert(0, os.path.abspath(parent_dir))
 
+import parameters
 from src.freq_analysis import *
 from src.figure_plots_parameters import *
 
@@ -63,7 +64,7 @@ def add_sizebar(ax, xlocs, ylocs, bcolor, text, textx, texty, fsize, rot, ha, va
 
 
 # get the root directory for the simulations
-root_cluster = os.path.join(parent_dir, 'results_cluster', 'results_fig4_ext')
+root_cluster = os.path.join(parent_dir, 'results_cluster', 'results_fig4_low_kN')
 # print(root_cluster)
 
 # get a list of the directories with oscillator amplitudes
@@ -71,7 +72,7 @@ osc_amplitude_dirs = sorted(next(os.walk(root_cluster))[1])
 # print(osc_amplitude_dirs)
 
 # set the directory with the precomputed results
-root_precomp = os.path.join(parent_dir, 'figures', 'fig4', 'data_ext')
+root_precomp = os.path.join(parent_dir, 'figures', 'fig4_low_kN', 'data')
 
 # Timing parameters
 second = 1
@@ -110,25 +111,19 @@ for val in osc_amplitude_dirs:
 osc_amps.sort()
 osc_amps = np.array(osc_amps)
 
-# stim_amps = np.arange(1, 11, 1)
-stim_amps = []
-for val in next(os.walk(os.path.join(root_cluster, osc_amplitude_dirs[0])))[1]:
-    if val == 'None':
-        continue
-    stim_amps.append(float(val.split('_')[0]))
-stim_amps.sort()
-stim_amps = np.array(stim_amps)
+# kN values = np.arange(1, 11, 1)
+kN_vals = np.arange(0.,55.,5.)
 
 # make a meshgrid for plotting heatmaps
-X, Y = np.meshgrid(osc_amps, stim_amps)
+X, Y = np.meshgrid(osc_amps, kN_vals)
 MI_heatmap_E = np.load(os.path.join(root_precomp, 'MI_E_heatmap.npy'))
 MI_heatmap_I = np.load(os.path.join(root_precomp, 'MI_I_heatmap.npy'))
 
 # Define points of interest % list of tuples: (label, [osc, stim] nA)
 points_of_interest = []
-points_of_interest.append((0.03, 8.0)) # A - no activity % post-stim
-points_of_interest.append((0.07, 8.0)) # B - transient activity
-points_of_interest.append((0.18, 8.0)) # C - restoration of physiological activity
+points_of_interest.append((0.20, 5.0)) # A - no activity % post-stim
+points_of_interest.append((0.20, 15.0)) # B - transient activity
+points_of_interest.append((0.20, 35.0)) # C - restoration of physiological activity
 points_of_interest_labels = ['A', 'B', 'C']
 
 # theta / gamma power matrices
@@ -161,61 +156,58 @@ for elem in gs_right:
     ax = fig.add_subplot(elem)
     axs_right.append(ax)
 
+# Parameters (backup) filename
+fname = 'parameters_bak.json'
+# t_stim = data['stimulation']['onset']*1000
+t_stim = 2000.0 # ms
+
 # iterate over oscillator amplitudes
-plot_idx = 0
+axs_idxs = []
 for osc_amp_dir in tqdm(osc_amplitude_dirs, desc='Plotting [A] w/ points of interest'):
     curr_osc_amp = float(osc_amp_dir.split('_')[1])
     idx_osc_amp = np.where(osc_amps == curr_osc_amp) # index for heatmap
 
     # one step in
     curr_osc_dir = os.path.join(root_cluster, osc_amp_dir)
-    # print('osc: ', osc_amp_dir)
+    print('osc: ', osc_amp_dir)
 
-    # iterate over stimulation amplitudes
-    stim_amp_dirs = [dirname for dirname in sorted(os.listdir(curr_osc_dir)) if os.path.isdir(os.path.join(curr_osc_dir, dirname))]
+    # two steps in - stim 8.0nA @ 2000ms
+    for kN_dir in next(os.walk(os.path.join(curr_osc_dir, '8.0_nA', '0.00_2000.0_ms')))[1]:
 
-    for stim_amp_dir in stim_amp_dirs:
-        if stim_amp_dir == 'None':
-            continue
+        # one more step in - kN
+        curr_kN_dir = os.path.join(curr_osc_dir, '8.0_nA', '0.00_2000.0_ms', kN_dir)
 
-        curr_stim_amp = float(stim_amp_dir.split('_')[0])
-        idx_stim_amp = np.where(stim_amps == curr_stim_amp) # index for heatmap
+        # load parameters backup data
+        try:
+            data = parameters.load(os.path.join(curr_kN_dir, fname))
+        except Exception as e:
+            print('[!]' + "Error code " + str(e.errno) + ": " + e.strerror + ' | Parameters file not found!')
+            continue;
+
+        curr_kN_val = data['Kuramoto']['kN']
+        idx_kN_val = np.where(kN_vals == curr_kN_val)[0] # index for heatmap
 
         # Set the current vals #-> used to decide if we're plotting traces
-        curr_vals = (curr_osc_amp, curr_stim_amp)
+        curr_vals = (curr_osc_amp, curr_kN_val)
 
         # Check if we need to plot the traces
         if curr_vals in points_of_interest:
+            print(curr_vals)
             # where is it found, what's the label of the point
             label_idx = points_of_interest.index(curr_vals)
-            # print("[>] Found label ", points_of_interest_labels[label_idx])
-
-            # one step in
-            curr_stim_dir = os.path.join(curr_osc_dir, stim_amp_dir)
-            # print('|')
-            # print('-> stim: ', stim_amp_dir)
-
-            # go through the stimulation directory
-            stim_time_dir = next(os.walk(curr_stim_dir))[1][0]
-            t_stim = float(stim_time_dir.split('_')[1]) # in ms
-            # print('|')
-            # print('---> stim_on: ', stim_time_dir)
-
-            # traverse the next directory too (simulation)
-            curr_stim_time_dir = os.path.join(curr_stim_dir, stim_time_dir)
-            sim_dir = next(os.walk(curr_stim_time_dir))[1][0]
-            curr_sim_dir = os.path.join(curr_stim_time_dir, sim_dir)
-            # print('|')
-            # print('-----> sim: ', sim_dir)
+            print("[>] Found label ", points_of_interest_labels[label_idx])
 
             # load the data (spikes) for the CA1 E-group
-            curr_data_dir = os.path.join(curr_sim_dir, 'data')
+            curr_data_dir = os.path.join(curr_kN_dir, 'data')
             curr_spikes_dir = os.path.join(curr_data_dir, 'spikes')
             # print('[L5]-----data: ', curr_data_dir)
             # print('[L6]------spikes: ', curr_spikes_dir)
 
+            print(curr_data_dir)
+
             # load the rhythm
             rhythm = np.loadtxt(os.path.join(curr_data_dir, 'order_param_mon_rhythm.txt'))
+
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning, append=1)
 
@@ -225,7 +217,7 @@ for osc_amp_dir in tqdm(osc_amplitude_dirs, desc='Plotting [A] w/ points of inte
                     i_inh = np.loadtxt(os.path.join(curr_spikes_dir, 'CA1_inh_spikemon_i.txt'))
                     t_inh = np.loadtxt(os.path.join(curr_spikes_dir, 'CA1_inh_spikemon_t.txt'))
                 else:
-                    print("[!] Warning: files missing!", "osc_amp: ", curr_osc_amp, " stim_amp: ", curr_stim_amp)
+                    print("[!] Warning: files missing!", "osc_amp: ", curr_osc_amp, " kN: ", curr_kN_val, " dir: ", curr_data_dir)
                     continue
 
             # Fix the timings -> from ms to sec
@@ -309,7 +301,10 @@ for osc_amp_dir in tqdm(osc_amplitude_dirs, desc='Plotting [A] w/ points of inte
             ax_FRs_curr.plot(tv_inh_FR, FR_inh_norm+rates_gap, ls='-', linewidth=1., c=c_inh, label='inh', zorder=10, rasterized=False)
             ax_FRs_curr.plot(tv_exc_FR, FR_exc_norm, ls='-', linewidth=1., c=c_exc, label='exc', zorder=10, rasterized=False)
 
+            # ax_rasters_curr.text(x=0.5, y=0.5, s=points_of_interest_labels[label_idx], transform=ax_rasters_curr.transAxes, fontsize=12)
+
             # add the axes to the lists
+            axs_idxs.append(label_idx)
             axs_rasters.append(ax_rasters_curr)
             axs_FRs.append(ax_FRs_curr)
 
@@ -318,7 +313,7 @@ for osc_amp_dir in tqdm(osc_amplitude_dirs, desc='Plotting [A] w/ points of inte
 print("Done.")
 
 # Share x axes in FRs
-for ax, label in zip(axs_rasters, points_of_interest_labels):
+for ax, label in zip(axs_rasters, [points_of_interest_labels[idx] for idx in axs_idxs]):
     # Hide some spines
     ax.spines['top'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
@@ -329,11 +324,13 @@ for ax, label in zip(axs_rasters, points_of_interest_labels):
     # ax.text(x=-0.02, y=0.85, transform=ax.transAxes, weight='bold', s=label, fontsize=fsize_misc, ha='center', color='red', bbox=dict(boxstyle='square', edgecolor='red', facecolor='none'), clip_on=False)
 
     # Set xlims
-    ax.set_xlim([(t_stim-500)*ms, (t_stim+3000)*ms])
+    ax.set_xlim([(t_stim-500)*ms, (t_stim+2500)*ms])
     ax.set_ylim([0, cnt+1])
 
     # Set y-labels
     ax.set_ylabel('CA1 Neurons', fontsize=fsize_xylabels, labelpad=20)
+
+    # ax.set_title(label)
 
     # Set the ticks
     # ax.xaxis.set_major_locator(ticker.FixedLocator(ax_rate_majors))
@@ -355,7 +352,7 @@ for ax in axs_FRs:
     ax.xaxis.set_major_locator(ticker.FixedLocator(ax_rate_majors))
 
     # Set xlims
-    ax.set_xlim([(t_stim-500)*ms, (t_stim+3000)*ms])
+    ax.set_xlim([(t_stim-500)*ms, (t_stim+2500)*ms])
     ax.set_ylim([-1, 600])
 
     # Set y-labels
@@ -378,23 +375,23 @@ for ax in axs_FRs:
 # Add sizebars for x-y axes
 xlims_sz = [t_stim*ms-0.550, t_stim*ms-0.300]
 ylims_sz = [-75, 25]
-add_sizebar(axs_FRs[-1], xlims_sz, [ylims_sz[0]]*2, 'black', '250 ms', fsize=fsize_xylabels, rot=0, textx=np.mean(xlims_sz), texty=ylims_sz[0]-50, ha='center', va='top')
-add_sizebar(axs_FRs[-1], [xlims_sz[0]]*2, ylims_sz, 'black', '100 Hz', fsize=fsize_xylabels, rot=90, textx=xlims_sz[0]-0.05, texty=np.mean(ylims_sz), ha='right', va='center')
+add_sizebar(axs_FRs[axs_idxs[-1]], xlims_sz, [ylims_sz[0]]*2, 'black', '250 ms', fsize=fsize_xylabels, rot=0, textx=np.mean(xlims_sz), texty=ylims_sz[0]-50, ha='center', va='top')
+add_sizebar(axs_FRs[axs_idxs[-1]], [xlims_sz[0]]*2, ylims_sz, 'black', '100 Hz', fsize=fsize_xylabels, rot=90, textx=xlims_sz[0]-0.05, texty=np.mean(ylims_sz), ha='right', va='center')
 
 # Stimulation lines + marker
 # First raster
 axs_rasters[0].axvline(x=t_stim*ms, ymin=-0.5, ymax=1.0, color='gray', alpha=0.75, ls='-', linewidth=0.75, zorder=10, rasterized=False, clip_on=True)
 
 # Rasters + FRs
-for ax in axs_rasters[1:] + axs_FRs[:-1]:
+for ax in [axs_rasters[idx] for idx in axs_idxs][1:] + [axs_FRs[idx] for idx in axs_idxs][:-1]:
     ax.axvline(x=t_stim*ms, ymin=-0.5, ymax=1.1, color='gray', alpha=0.75, ls='-', linewidth=0.75, zorder=10, rasterized=False, clip_on=False)
 
 # Last FR
-axs_FRs[-1].axvline(x=t_stim*ms, ymin=0, ymax=1.1, color='gray', alpha=0.75, ls='-', linewidth=0.75, zorder=10, rasterized=False, clip_on=True)
+axs_FRs[axs_idxs[-1]].axvline(x=t_stim*ms, ymin=0, ymax=1.1, color='gray', alpha=0.75, ls='-', linewidth=0.75, zorder=10, rasterized=False, clip_on=True)
 
 # Don't forget to mark the stimulation onset!
 # add marker for stimulation onset
-axs_rasters[0].scatter(x=t_stim*ms, y=cnt+30, s=15, linewidth=1., marker='v', c='gray', edgecolors=None, alpha=1, rasterized=False, clip_on=False)
+axs_rasters[axs_idxs[0]].scatter(x=t_stim*ms, y=cnt+30, s=15, linewidth=1., marker='v', c='gray', edgecolors=None, alpha=1, rasterized=False, clip_on=False)
 
 # set vmin/vmax for plotting
 # vmin = 1e-12
@@ -433,9 +430,9 @@ im6 = axs_right[1].pcolormesh(X+X.min()/2, Y+Y.min()/2, gamma_heatmap_E.T, cmap=
 rect_list = []
 
 # Add text annotations
-text_c = [(points_of_interest[0][0]+0.0, points_of_interest[0][1]-2.0),
-          (points_of_interest[1][0]+0.0, points_of_interest[1][1]-2.0),
-          (points_of_interest[2][0]+0.0, points_of_interest[2][1]-2.0)
+text_c = [(points_of_interest[0][0]-0.05, points_of_interest[0][1]-0.0),
+          (points_of_interest[1][0]-0.05, points_of_interest[1][1]-0.0),
+          (points_of_interest[2][0]-0.05, points_of_interest[2][1]-0.0)
          ]
 for point, label, text_coords in zip(points_of_interest, points_of_interest_labels, text_c):
     # Add annotations
@@ -454,7 +451,7 @@ for point, label, text_coords in zip(points_of_interest, points_of_interest_labe
                           # bbox=dict(boxstyle='square', edgecolor='white', facecolor='none'),
                           weight='bold', fontsize=fsize_misc, color='white',
                           horizontalalignment='center',
-                          verticalalignment='top')
+                          verticalalignment='center')
 #
 # axs_right[0].annotate(label,
 #                       xy=text_coords,
@@ -491,17 +488,17 @@ for ax in axs_right[1:]:
 # Set x-y ticks properly
 for ax in axs_right:
     ax.set_xticks([])
-    ax.set_yticks(stim_amps[1::2])
+    ax.set_yticks(kN_vals[1::2])
     ax.tick_params(axis='both', which='both', labelsize=fsize_ticks)
 ax.set_xticks(osc_amps[1::4])
 
 # Set x-y labels
-axs_right[0].set_ylabel('Stim. amp. [nA]', fontsize=fsize_xylabels)
-axs_right[0].set_ylabel('Stim. amp. [nA]', fontsize=fsize_xylabels)
-axs_right[1].set_ylabel('Stim. amp. [nA]', fontsize=fsize_xylabels)
-axs_right[1].set_ylabel('Stim. amp. [nA]', fontsize=fsize_xylabels)
-axs_right[2].set_ylabel('Stim. amp. [nA]', fontsize=fsize_xylabels)
-axs_right[2].set_ylabel('Stim. amp. [nA]', fontsize=fsize_xylabels)
+axs_right[0].set_ylabel('Synchronization (kN)', fontsize=fsize_xylabels)
+axs_right[0].set_ylabel('Synchronization (kN)', fontsize=fsize_xylabels)
+axs_right[1].set_ylabel('Synchronization (kN)', fontsize=fsize_xylabels)
+axs_right[1].set_ylabel('Synchronization (kN)', fontsize=fsize_xylabels)
+axs_right[2].set_ylabel('Synchronization (kN)', fontsize=fsize_xylabels)
+axs_right[2].set_ylabel('Synchronization (kN)', fontsize=fsize_xylabels)
 axs_right[2].set_xlabel('Osc. amp. [nA]', fontsize=fsize_xylabels)
 
 # Set titles
@@ -532,18 +529,18 @@ cbar_theta.ax.tick_params(labelsize=fsize_ticks)
 cbar_gamma.ax.tick_params(labelsize=fsize_ticks)
 
 # Set the panel labels
-axs_rasters[0].set_title('A.', loc='left', weight='bold', fontsize=fsize_panels)
-axs_rasters[1].set_title('B.', loc='left', weight='bold', fontsize=fsize_panels)
-axs_rasters[2].set_title('C.', loc='left', weight='bold', fontsize=fsize_panels)
-axs_right[0].set_title('D.', loc='left', weight='bold', fontsize=fsize_panels)
+axs_rasters[axs_idxs[0]].set_title('A.', loc='left', weight='bold', fontsize=fsize_panels)
+axs_rasters[axs_idxs[1]].set_title('B.', loc='left', weight='bold', fontsize=fsize_panels)
+axs_rasters[axs_idxs[2]].set_title('C.', loc='left', weight='bold', fontsize=fsize_panels)
+axs_right[axs_idxs[0]].set_title('D.', loc='left', weight='bold', fontsize=fsize_panels)
 
 # Try the Gridspec tight_layout approach
 gs_outer.tight_layout(fig)
 
 # Save the figure
 print('[+] Saving the figure...')
-fig.savefig(os.path.join(parent_dir, 'figures', 'fig4', 'fig4_full.png'), transparent=True, dpi=300, format='png', bbox_inches='tight')
-fig.savefig(os.path.join(parent_dir, 'figures', 'fig4', 'fig4_full.pdf'), transparent=True, dpi=300, format='pdf', bbox_inches='tight')
+fig.savefig(os.path.join(parent_dir, 'figures', 'fig4_low_kN', 'fig4_low_kN_full.png'), transparent=True, dpi=300, format='png', bbox_inches='tight')
+fig.savefig(os.path.join(parent_dir, 'figures', 'fig4_low_kN', 'fig4_low_kN_full.pdf'), transparent=True, dpi=300, format='pdf', bbox_inches='tight')
 
 # Show the images
 plt.show()

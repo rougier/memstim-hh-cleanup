@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-fn', '--figure-name',
                         type=str,
-                        default='fig5',
+                        default='fig_low_kN',
                         help='Name of the output figure [w/o file extension].')
 
     args = parser.parse_args()
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     dt = 0.1*ms
     fs = int(1/dt)
 
-    duration = 8*second # change this if you change the dataset
-    # duration = 5*second
+    # duration = 8*second # change this if you change the dataset
+    duration = 8*second
     tv = np.arange(0, duration, dt)
 
     # t_stim = 1800*ms # change this if you change the dataset
@@ -107,6 +107,10 @@ if __name__ == "__main__":
     # Frequency bands
     theta_band = [3,9]
     gamma_band = [40, 80]
+
+    # Max rhythm value
+    rhythm_gain_val = 0.18
+    rhythm_max_val = 0.2 # 0.22 nA
 
     # FR calculation
     winsize_FR = 5*ms
@@ -136,7 +140,7 @@ if __name__ == "__main__":
 
     # Set theta rhythm limits
     xlims_rhythm = [t for t in t_lims]
-    ylims_rhythm = [-0.1, 1.1]
+    ylims_rhythm = [-0.01, 0.21]
 
     # Set raster limits
     xlims_rasters = [t for t in t_lims]
@@ -154,26 +158,8 @@ if __name__ == "__main__":
     fig_height = 8.75
     dpi = 300
 
-    # Data - point B
-    results_in_phase_B_base_dir = os.path.join(parent_dir, 'results', 'fig5_single', 'point_B', '8.0_nA', '0.00_1850.3_ms') # change this for new dataset
-    results_in_phase_B_dirs = [os.path.join(results_in_phase_B_base_dir, 'w_phase_reset'),
-                               os.path.join(results_in_phase_B_base_dir, 'wo_phase_reset')]
-    data_in_phase_B_dirs = [os.path.join(results_in_phase_B_dirs[0], 'data'),
-                            os.path.join(results_in_phase_B_dirs[1], 'data')]
-    spikes_in_phase_B_dir = [os.path.join(data_in_phase_B_dirs[0], 'spikes'),
-                             os.path.join(data_in_phase_B_dirs[1], 'spikes')]
-
-    results_out_of_phase_B_base_dir = os.path.join(parent_dir, 'results', 'fig5_single', 'point_B', '8.0_nA', '0.00_1934.4_ms') # change this for new dataset
-    results_out_of_phase_B_dirs = [os.path.join(results_out_of_phase_B_base_dir, 'w_phase_reset'),
-                               os.path.join(results_out_of_phase_B_base_dir, 'wo_phase_reset')]
-    data_out_of_phase_B_dirs = [os.path.join(results_out_of_phase_B_dirs[0], 'data'),
-                            os.path.join(results_out_of_phase_B_dirs[1], 'data')]
-    spikes_out_of_phase_B_dir = [os.path.join(data_out_of_phase_B_dirs[0], 'spikes'),
-                             os.path.join(data_out_of_phase_B_dirs[1], 'spikes')]
-
-
     # Data - point C
-    results_in_phase_C_base_dir = os.path.join(parent_dir, 'results', 'fig5_single', 'point_C', '8.0_nA', '0.00_1850.3_ms') # change this for new dataset
+    results_in_phase_C_base_dir = os.path.join(parent_dir, 'results', 'fig_kN_single2', '8.0_nA', '0.00_1841.2_ms') # change this for new dataset
     results_in_phase_C_dirs = [os.path.join(results_in_phase_C_base_dir, 'w_phase_reset'),
                                os.path.join(results_in_phase_C_base_dir, 'wo_phase_reset')]
     data_in_phase_C_dirs = [os.path.join(results_in_phase_C_dirs[0], 'data'),
@@ -181,7 +167,7 @@ if __name__ == "__main__":
     spikes_in_phase_C_dir = [os.path.join(data_in_phase_C_dirs[0], 'spikes'),
                              os.path.join(data_in_phase_C_dirs[1], 'spikes')]
 
-    results_out_of_phase_C_base_dir = os.path.join(parent_dir, 'results', 'fig5_single', 'point_C', '8.0_nA', '0.00_1934.4_ms') # change this for new dataset
+    results_out_of_phase_C_base_dir = os.path.join(parent_dir, 'results', 'fig_kN_single2', '8.0_nA', '0.00_1924.7_ms') # change this for new dataset
     results_out_of_phase_C_dirs = [os.path.join(results_out_of_phase_C_base_dir, 'w_phase_reset'),
                                os.path.join(results_out_of_phase_C_base_dir, 'wo_phase_reset')]
     data_out_of_phase_C_dirs = [os.path.join(results_out_of_phase_C_dirs[0], 'data'),
@@ -189,9 +175,8 @@ if __name__ == "__main__":
     spikes_out_of_phase_C_dir = [os.path.join(data_out_of_phase_C_dirs[0], 'spikes'),
                              os.path.join(data_out_of_phase_C_dirs[1], 'spikes')]
 
-
-    # Data for pulses - point B
-    results_trains_in_phase_B_base_dir = os.path.join(parent_dir, 'results', 'fig_kN_point_B_trains', '8.0_nA', '0.00_1850.3_ms') # change this for new dataset
+    # Data for pulse trains - point B
+    results_trains_in_phase_B_base_dir = os.path.join(parent_dir, 'results', 'fig_kN_point_B_trains2', '8.0_nA', '0.00_1841.2_ms') # change this for new dataset
     results_trains_in_phase_B_dirs = [os.path.join(results_trains_in_phase_B_base_dir, 'w_phase_reset'),
                                os.path.join(results_trains_in_phase_B_base_dir, 'wo_phase_reset')]
     data_trains_in_phase_B_dirs = [os.path.join(results_trains_in_phase_B_dirs[0], 'data'),
@@ -199,7 +184,7 @@ if __name__ == "__main__":
     spikes_trains_in_phase_B_dir = [os.path.join(data_trains_in_phase_B_dirs[0], 'spikes'),
                              os.path.join(data_trains_in_phase_B_dirs[1], 'spikes')]
 
-    results_trains_out_of_phase_B_base_dir = os.path.join(parent_dir, 'results', 'fig_kN_point_B_trains', '8.0_nA', '0.00_1934.4_ms') # change this for new dataset
+    results_trains_out_of_phase_B_base_dir = os.path.join(parent_dir, 'results', 'fig_kN_point_B_trains2', '8.0_nA', '0.00_1924.7_ms') # change this for new dataset
     results_trains_out_of_phase_B_dirs = [os.path.join(results_trains_out_of_phase_B_base_dir, 'w_phase_reset'),
                                os.path.join(results_trains_out_of_phase_B_base_dir, 'wo_phase_reset')]
     data_trains_out_of_phase_B_dirs = [os.path.join(results_trains_out_of_phase_B_dirs[0], 'data'),
@@ -208,7 +193,7 @@ if __name__ == "__main__":
                              os.path.join(data_trains_out_of_phase_B_dirs[1], 'spikes')]
 
 
-    """ Plot figures 5/6 of the paper - TODO: Add DOI"""
+    """ Plot figures 5/6 w/ low kN of the paper - TODO: Add DOI"""
     print('[+] Generating the figure...')
 
     # Make a figure
@@ -435,7 +420,8 @@ if __name__ == "__main__":
         print('[+] Plotting rhythm...')
 
         rhythm = np.loadtxt(os.path.join(results_dir_curr, 'data', 'order_param_mon_rhythm.txt'))
-        ax_rhythm.plot(tv, rhythm/(np.max(rhythm)), ls='-', c='k', linewidth=1., rasterized=False, zorder=1)
+        rhythm *= rhythm_gain_val*1e-9
+        ax_rhythm.plot(tv, rhythm, ls='-', c='k', linewidth=1., rasterized=False, zorder=1)
 
         # vertical lines at x-points
         pks_post, _ = sig.find_peaks(rhythm, distance=int(50*ms*fs))
@@ -461,10 +447,10 @@ if __name__ == "__main__":
         fval_fin = fval1 # tensorpac PSD argmax calculation
 
         # text frequency label
-        ax_rhythm.text(x=xlims_rhythm[1]-25*ms, y=1.2, s=r"$f_\theta={0:.1f}$ Hz".format(fval_fin), fontsize=fsize_misc, ha='right', color='k', clip_on=False)
+        ax_rhythm.text(x=xlims_rhythm[1]-25*ms, y=ylims_rhythm[1]+0.03, s=r"$f_\theta={0:.1f}$ Hz".format(fval_fin), fontsize=fsize_misc, ha='right', color='k', clip_on=False)
 
         # add a sizebar for the y-axis
-        add_sizebar(ax_rhythm, [xlims_rhythm[1]+sizebar_off, xlims_rhythm[1]+sizebar_off], [0, 1.], 'black', ['0', '1'], fsize=fsize_legends, rot=[0, 0], textx=[xlims_rhythm[1]+sizebar_off+20*ms]*2, texty=[0, 1], ha='left', va='center')
+        add_sizebar(ax_rhythm, [xlims_rhythm[1]+sizebar_off, xlims_rhythm[1]+sizebar_off], [0, 0.1], 'black', ['0', '0.1 nA'], fsize=fsize_legends, rot=[0, 0], textx=[xlims_rhythm[1]+sizebar_off+20*ms]*2, texty=[0, 0.12], ha='left', va='center')
 
         # ================================
         # Plot the phase / order parameter
@@ -660,7 +646,7 @@ if __name__ == "__main__":
             xstim = np.loadtxt(os.path.join(results_dir_curr, 'data', 'stim_input.txt'))
 
         # stim onset
-        ax_rhythm.scatter(x=t_stim, y=1.5, s=75, marker='v', edgecolors='white', facecolors='gray', rasterized=False, clip_on=False)
+        ax_rhythm.scatter(x=t_stim, y=ylims_rhythm[1]+0.05, s=75, marker='v', edgecolors='white', facecolors='gray', rasterized=False, clip_on=False)
 
         # Find stimulation peaks
         idx_all = sig.find_peaks(xstim)
@@ -669,11 +655,11 @@ if __name__ == "__main__":
             curr_idx = idx_all[0]
             for idx in idx_all[1:]:
                 if idx - curr_idx > 1:
-                    ax_rhythm.scatter(x=tv[idx], y=1.2, s=25, marker='o', edgecolors='white', facecolors='gray', rasterized=False, clip_on=False)
+                    ax_rhythm.scatter(x=tv[idx], y=ylims_rhythm[1]+0.036, s=20, marker='o', edgecolors='none', facecolors='gray', rasterized=False, clip_on=False)
                 curr_idx = idx
 
         # Shade the areas
-        ax_rhythm.fill_betweenx(y=[0,1], x1=t_lims_post[0], x2=t_lims_post[1], color='k', alpha=0.25)
+        ax_rhythm.fill_betweenx(y=[-0.01,rhythm_max_val], x1=t_lims_post[0], x2=t_lims_post[1], color='k', alpha=0.25)
         axs[2][3].fill_betweenx(y=[0,N_scaling], x1=t_lims_post[0], x2=t_lims_post[1], color=c_exc, alpha=0.25)
         axs[2][3].fill_betweenx(y=[N_scaling+N_gap, ylims_rasters[1]], x1=t_lims_post[0], x2=t_lims_post[1], color=c_inh, alpha=0.25)
 
@@ -689,7 +675,7 @@ if __name__ == "__main__":
     # Add the bar plots
     bar_axs = []
 
-    for G_curr, data, label in zip(G_barplots, [theta_band_power, gamma_band_power, PAC_metric], ["CA1 Theta Band Power", "CA1 Gamma Band Power", "CA1 Phase-Amplitude Coupling"]):
+    for G_curr, data, label in zip(G_barplots, [theta_band_power, gamma_band_power, PAC_metric], ["CA1 Theta Power", "CA1 Gamma Power", "CA1 Phase-Amplitude Coupling"]):
 
         # X/Y axes
         X = np.arange(0, 4)
@@ -703,13 +689,6 @@ if __name__ == "__main__":
         bars_E = ax.bar(X*3, data_arr[3::4,0], color=c_exc)
         bars_I = ax.bar(X*3+1, data_arr[3::4,1], color=c_inh)
 
-        # # Add values on top of each bar
-        # for bars in ax.containers:
-        #     ax.bar_label(bars, np.round(bars.datavalues,2), fontsize=8, color='white', label_type='center', rotation=90)
-        #
-        # # Scientific notation for y-axis
-        # ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-
         # Set x-ticks and x-labels
         ax.tick_params(axis='x', size=0, labelsize=fsize_ticks, labelrotation=45)
         ax.set_xticks(X*3+0.5)
@@ -717,7 +696,7 @@ if __name__ == "__main__":
         ax.set_title(label, fontsize=fsize_titles)
 
         # Add text for units
-        ax.text(x=-0.08, y=-0.2, s='(a.u.)', fontsize=fsize_xylabels, ha='center', va='center', transform=ax.transAxes)
+        ax.text(x=-0.08, y=-0.2, s='a.u.', fontsize=fsize_xylabels, ha='center', va='center', transform=ax.transAxes)
 
         # remove y-ticks
         # ax.set_yticks([])
@@ -782,8 +761,8 @@ if __name__ == "__main__":
 
     """ Saving the figure """
     print('[+] Saving the figure...')
-    fig.savefig(os.path.join(parent_dir, 'figures', 'fig5', args.figure_name + '.png'), transparent=True, dpi=300, format='png')
-    fig.savefig(os.path.join(parent_dir, 'figures', 'fig5', args.figure_name + '.pdf'), transparent=True, dpi=300, format='pdf')
+    fig.savefig(os.path.join(parent_dir, 'figures', 'fig5_low_kN', args.figure_name + '.png'), transparent=True, dpi=300, format='png')
+    fig.savefig(os.path.join(parent_dir, 'figures', 'fig5_low_kN', args.figure_name + '.pdf'), transparent=True, dpi=300, format='pdf')
 
     print('[!] Done')
 
